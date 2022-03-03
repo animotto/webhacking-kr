@@ -48,6 +48,19 @@ module WebhackingKR
         when 'q', 'quit'
           @running = false
 
+        when 'a', 'auth'
+          if words.length < 3
+            log('Specify login and password')
+            next
+          end
+
+          unless @wargame.auth(words[1], words[2])
+            log('Authentication failed')
+            next
+          end
+
+          log('Authentication successful')
+
         when 'l', 'level'
           if words.length < 2
             log('Specify the level')
