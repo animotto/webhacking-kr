@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+
+# frozen_string_literal: true
+
+require 'webhacking_kr'
+
+trap('INT') { exit }
+
+shell = WebhackingKR::Shell.new
+shell.run
