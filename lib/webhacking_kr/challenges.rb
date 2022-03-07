@@ -241,6 +241,24 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 10
+  class Challenge10 < ChallengeBase
+    CHALLENGE = 10
+
+    PATH = '/challenge/code-1/'
+    QUERY = '?go='
+    PIXEL = '1600px'
+
+    def exec
+      response = get(
+        "#{PATH}#{QUERY}#{PIXEL}",
+        { 'Referer' => "#{Wargame::BASE_URI}#{PATH}" }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 19
   class Challenge19 < ChallengeBase
     CHALLENGE = 19
