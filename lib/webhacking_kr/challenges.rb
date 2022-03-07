@@ -411,4 +411,21 @@ module WebhackingKR
       end
     end
   end
+
+  ##
+  # Challenge 32
+  class Challenge32 < ChallengeBase
+    CHALLENGE = 32
+
+    PATH = '/challenge/code-5/'
+    QUERY = '?hit='
+    AMOUNT = 100
+
+    def exec
+      log("Hitting page #{AMOUNT} times")
+      AMOUNT.times { get("#{PATH}#{QUERY}#{@wargame.user_id}") }
+      response = get(PATH)
+      check(response.body)
+    end
+  end
 end
