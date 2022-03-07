@@ -329,6 +329,20 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 17
+  class Challenge17 < ChallengeBase
+    CHALLENGE = 17
+
+    PATH = '/challenge/js-4/'
+    UNLOCK = 780929.71
+
+    def exec
+      response = get("#{PATH}?#{UNLOCK}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 19
   class Challenge19 < ChallengeBase
     CHALLENGE = 19
