@@ -284,6 +284,23 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 14
+  class Challenge14 < ChallengeBase
+    CHALLENGE = 14
+
+    PATH = '/challenge/js-1/'
+
+    def exec
+      url = "#{Wargame::BASE_URI}#{PATH}"
+      ul = url.index('.kr')
+      ul *= 30
+      log('Getting page')
+      response = get("#{PATH}?#{ul**2}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 19
   class Challenge19 < ChallengeBase
     CHALLENGE = 19
@@ -320,7 +337,10 @@ module WebhackingKR
         log('Getting page')
         response = get(QUERY)
         match = /name=captcha_ value="([a-zA-Z0-9]{10})"/.match(response.body)
-        failed unless match
+        unless match
+          failed
+          return
+        end
 
         cookie = response['Set-Cookie'].split('; ')
         st = 0
