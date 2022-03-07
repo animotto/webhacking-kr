@@ -2,6 +2,7 @@
 
 require 'digest'
 require 'base64'
+require 'resolv'
 
 module WebhackingKR
   ##
@@ -254,6 +255,30 @@ module WebhackingKR
         "#{PATH}#{QUERY}#{PIXEL}",
         { 'Referer' => "#{Wargame::BASE_URI}#{PATH}" }
       )
+      check(response.body)
+    end
+  end
+
+  ##
+  # Challenge 11
+  class Challenge11 < ChallengeBase
+    CHALLENGE = 11
+
+    PATH = '/challenge/code-2/'
+    QUERY = '?val='
+
+    OPENDNS_RESOLVER = 'resolver1.opendns.com'
+    OPENDNS_MYIP = 'myip.opendns.com'
+
+    def exec
+      log('Determining your own IP address')
+      resolver = Resolv::DNS.new(nameserver: OPENDNS_RESOLVER)
+      myip = resolver.getaddress(OPENDNS_MYIP).to_s
+      log("IP: #{myip}")
+      val = "1abcde_#{myip}\tp\ta\ts\ts"
+      val = URI.encode_www_form_component(val)
+      log("Sending value: #{val}")
+      response = get("#{PATH}#{QUERY}=#{val}")
       check(response.body)
     end
   end
