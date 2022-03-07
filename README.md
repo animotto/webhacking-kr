@@ -1,1 +1,1 @@
-# Webhacking.kr wargame solution tool
+# webhacking.kr wargame

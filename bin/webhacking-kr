@@ -4,7 +4,5 @@
 
 require 'webhacking_kr'
 
-trap('INT') { exit }
-
 shell = WebhackingKR::Shell.new
 shell.run

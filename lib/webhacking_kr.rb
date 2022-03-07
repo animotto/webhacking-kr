@@ -2,4 +2,4 @@
 
 require 'webhacking_kr/shell'
 require 'webhacking_kr/wargame'
-require 'webhacking_kr/levels'
+require 'webhacking_kr/challenges'

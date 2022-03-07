@@ -6,20 +6,29 @@ module WebhackingKR
   ##
   # Shell
   class Shell
-    PROMPT = 'Webhacking.kr> '
+    PROMPT = 'webhacking.kr> '
     BANNER = <<~ENDBANNER
       _______________________
 
-       Webhacking.kr wargame
+       webhacking.kr wargame
       _______________________
 
     ENDBANNER
+
+    COMMANDS = {
+      'login' => ['l', '<login> <password>', 'Login'],
+      'status' => ['s', '', 'Show your status'],
+      'challenge' => ['c', '<n>', 'Run challenge'],
+      'help' => ['?', '', 'This help'],
+      'quit' => ['q', '', 'Quit']
+    }.freeze
 
     def initialize
       @input = $stdin
       @output = $stdout
       @running = false
       @wargame = Wargame.new(self)
+      Readline.completion_proc = proc { |s| COMMANDS.keys.grep(/^#{s}/) }
     end
 
     def log(message)
@@ -29,7 +38,9 @@ module WebhackingKR
     def run
       log(BANNER)
       @running = true
-      while @running
+      loop do
+        break unless @running
+
         line = Readline.readline(PROMPT, true)
         unless line
           @running = false
@@ -48,31 +59,74 @@ module WebhackingKR
         when 'q', 'quit'
           @running = false
 
-        when 'a', 'auth'
+        when 'l', 'login'
           if words.length < 3
             log('Specify login and password')
             next
           end
 
-          unless @wargame.auth(words[1], words[2])
-            log('Authentication failed')
+          unless @wargame.login(words[1], words[2])
+            log('Login failed')
             next
           end
 
-          log('Authentication successful')
+          log('Logged in')
 
-        when 'l', 'level'
+        when 's', 'status'
+          unless @wargame.session_id
+            log('Not logged in')
+            next
+          end
+
+          status = @wargame.status
+          unless status
+            log('Failed')
+            next
+          end
+
+          log('Status:')
+          status.each do |k, v|
+            log(
+              format(
+                ' %<key>-15s%<value>s',
+                key: k.capitalize,
+                value: v
+              )
+            )
+          end
+
+        when 'c', 'challenge'
           if words.length < 2
-            log('Specify the level')
+            log('Specify the challenge')
             next
           end
 
-          @wargame.level = words[1].to_i
+          unless @wargame.session_id
+            log('Not logged in')
+            next
+          end
+
+          @wargame.challenge = words[1].to_i
           @wargame.exec
+
+        when '?', 'help'
+          log('Commands:')
+          COMMANDS.each do |k, v|
+            log(
+              format(
+                ' %<short>s %<long>-30s%<desc>s',
+                short: v[0],
+                long: "#{k} #{v[1]}",
+                desc: v[2]
+              )
+            )
+          end
 
         else
           log('Unknown command')
         end
+      rescue Interrupt
+        next
       end
     end
   end
