@@ -10,6 +10,7 @@ module WebhackingKR
     BASE_URI = 'https://webhacking.kr'
     QUERY_LOGIN = '/login.php?login'
     QUERY_CHALLENGE = '/chall.php'
+    QUERY_AUTH = '/auth.php'
 
     attr_reader :session_id
     attr_accessor :user_id, :password, :challenge

