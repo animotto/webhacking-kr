@@ -315,6 +315,20 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 16
+  class Challenge16 < ChallengeBase
+    CHALLENGE = 16
+
+    PATH = '/challenge/js-3/'
+    TARGET = "#{124.chr}.php"
+
+    def exec
+      response = get("#{PATH}#{TARGET}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 19
   class Challenge19 < ChallengeBase
     CHALLENGE = 19
