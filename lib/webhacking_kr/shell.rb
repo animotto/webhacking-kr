@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'readline'
+require 'io/console'
 
 module WebhackingKR
   ##
@@ -16,7 +17,7 @@ module WebhackingKR
     ENDBANNER
 
     COMMANDS = {
-      'login' => ['l', '<login> <password>', 'Login'],
+      'login' => ['l', '<user_id> [password]', 'Login'],
       'status' => ['s', '', 'Show your status'],
       'challenge' => ['c', '<n>', 'Run challenge'],
       'help' => ['?', '', 'This help'],
@@ -33,6 +34,13 @@ module WebhackingKR
 
     def log(message)
       @output.puts(message)
+    end
+
+    def read_password(prompt = 'Password: ')
+      @output.print(prompt)
+      line = @input.noecho(&:gets).chomp
+      @output.puts
+      line
     end
 
     def run
@@ -60,12 +68,20 @@ module WebhackingKR
           @running = false
 
         when 'l', 'login'
-          if words.length < 3
-            log('Specify login and password')
+          if words.length < 2 && @wargame.user_id.nil?
+            log('Specify user id and password')
             next
           end
 
-          unless @wargame.login(words[1], words[2])
+          @wargame.user_id = words[1] if words.length >= 2
+
+          if words.length >= 3
+            @wargame.password = words[2]
+          elsif @wargame.password.nil?
+            @wargame.password = read_password
+          end
+
+          unless @wargame.login
             log('Login failed')
             next
           end

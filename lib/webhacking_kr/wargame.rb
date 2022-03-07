@@ -12,10 +12,13 @@ module WebhackingKR
     QUERY_CHALLENGE = '/chall.php'
 
     attr_reader :session_id
-    attr_accessor :challenge
+    attr_accessor :user_id, :password, :challenge
 
     def initialize(shell)
       @shell = shell
+
+      @user_id = ENV['WEBHACK_KR_USERID']
+      @password = ENV['WEBHACK_KR_PASSWORD']
 
       uri = URI(BASE_URI)
       @client = Net::HTTP.new(uri.host, uri.port)
@@ -27,12 +30,12 @@ module WebhackingKR
       ChallengeBase.successors.each { |successor| @challenges << successor.new(@shell, self, @client) }
     end
 
-    def login(login, password)
+    def login
       request = Net::HTTP::Post.new(QUERY_LOGIN)
       request.set_form_data(
         {
-          'id' => login,
-          'pw' => password
+          'id' => @user_id,
+          'pw' => @password
         }
       )
       response = @client.request(request)
