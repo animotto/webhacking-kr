@@ -151,6 +151,8 @@ module WebhackingKR
         end
       rescue Interrupt
         next
+      rescue HTTPError => e
+        log("HTTP error: #{e}")
       end
     end
   end

@@ -12,8 +12,8 @@ module WebhackingKR
     QUERY_CHALLENGE = '/chall.php'
     QUERY_AUTH = '/auth.php'
 
-    attr_reader :session_id, :challenges
-    attr_accessor :user_id, :password, :challenge
+    attr_reader :challenges
+    attr_accessor :user_id, :password, :session_id, :challenge
 
     def initialize(shell)
       @shell = shell
@@ -39,17 +39,33 @@ module WebhackingKR
           'pw' => @password
         }
       )
-      response = @client.request(request)
+      begin
+        response = @client.request(request)
+      rescue StandardError => e
+        raise HTTPError, e
+      end
       return if response.body =~ /Login Failed/
+      return unless response['Set-Cookie']
 
-      @session_id = response['Set-Cookie']
+      response['Set-Cookie'].split('; ').each do |var|
+        val = var.split('=')
+        next unless val[0] == 'PHPSESSID'
+
+        @session_id = val[1]
+      end
+
+      !@session_id.nil?
     end
 
     def status
-      response = @client.get(
-        QUERY_CHALLENGE,
-        { 'Cookie' => @session_id }
-      )
+      begin
+        response = @client.get(
+          QUERY_CHALLENGE,
+          { 'Cookie' => "PHPSESSID=#{@session_id}" }
+        )
+      rescue StandardError => e
+        raise HTTPError, e
+      end
       match = /userid : (\S+), score : (\d+)/.match(response.body)
       return unless match
 
@@ -68,5 +84,10 @@ module WebhackingKR
 
       challenge.exec
     end
+  end
+
+  ##
+  # HTTP error
+  class HTTPError < StandardError
   end
 end

