@@ -12,7 +12,7 @@ module WebhackingKR
     QUERY_CHALLENGE = '/chall.php'
     QUERY_AUTH = '/auth.php'
 
-    attr_reader :session_id
+    attr_reader :session_id, :challenges
     attr_accessor :user_id, :password, :challenge
 
     def initialize(shell)

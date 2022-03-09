@@ -19,7 +19,7 @@ module WebhackingKR
     COMMANDS = {
       'login' => ['l', '<user_id> [password]', 'Login'],
       'status' => ['s', '', 'Show your status'],
-      'challenge' => ['c', '<n>', 'Run challenge'],
+      'challenge' => ['c', '[n]', 'Run challenge'],
       'help' => ['?', '', 'This help'],
       'quit' => ['q', '', 'Quit']
     }.freeze
@@ -113,7 +113,15 @@ module WebhackingKR
 
         when 'c', 'challenge'
           if words.length < 2
-            log('Specify the challenge')
+            log('Available challenges:')
+            @wargame.challenges.each.with_index do |challenge, i|
+              if (i % 10).zero?
+                @output.puts unless i.zero?
+                @output.print(' ')
+              end
+              @output.print(format('%2d ', challenge.class::CHALLENGE))
+            end
+            @output.puts
             next
           end
 
