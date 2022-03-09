@@ -404,7 +404,6 @@ module WebhackingKR
 
     def exec
       log('Determining your own IP address')
-      resolver = Resolv::DNS.new(nameserver: OPENDNS_RESOLVER)
       ip = myip
       log("IP: #{ip}")
       val = "1abcde_#{ip}\tp\ta\ts\ts"
@@ -703,6 +702,28 @@ module WebhackingKR
       AMOUNT.times { get("#{PATH}#{QUERY}#{@wargame.user_id}") }
       response = get(PATH)
       check(response.body)
+    end
+  end
+
+  ##
+  # Challenge 36
+  class Challenge36 < ChallengeBase
+    CHALLENGE = 36
+
+    PATH = '/challenge/bonus-8/'
+    FILE = '.index.php.swp'
+
+    def exec
+      log('Getting file')
+      response = get("#{PATH}#{FILE}")
+      match = /(FLAG\{.*\})/.match(response.body)
+      unless match
+        failed
+        return
+      end
+
+      log(match[1])
+      check(auth(match[1]))
     end
   end
 
