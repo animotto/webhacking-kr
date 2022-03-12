@@ -708,6 +708,168 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 33
+  class Challenge33 < ChallengeBase
+    CHALLENGE = 33
+
+    PATH = '/challenge/bonus-6/'
+    LEVEL2_PATH = "#{PATH}lv2.php"
+    LEVEL3_PATH = "#{PATH}33.php"
+    LEVEL4_PATH = "#{PATH}l4.php"
+    LEVEL5_PATH = "#{PATH}md555.php"
+    LEVEL6_PATH = "#{PATH}gpcc.php"
+    LEVEL7_PATH = "#{PATH}wtff.php"
+    LEVEL8_PATH = "#{PATH}ipt.php"
+    LEVEL9_PATH = "#{PATH}nextt.php"
+    LEVEL10_PATH = "#{PATH}forfor.php"
+    LEVEL10_DIR = "#{PATH}answerip/"
+
+    def exec
+      query = URI.encode_www_form('get' => 'hehe')
+      log('Level 1')
+      log('Sending GET query')
+      response = get("#{PATH}?#{query}")
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 2')
+      log('Sending POST query')
+      response = post(
+        LEVEL2_PATH,
+        {
+          'post' => 'hehe',
+          'post2' => 'hehe2',
+        }
+      )
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 3')
+      log('Determining your own IP address')
+      ip = myip
+      log("IP: #{ip}")
+      query = URI.encode_www_form('myip' => ip)
+      log('Sending query')
+      response = get("#{LEVEL3_PATH}?#{query}")
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 4')
+      log('Getting server timestamp')
+      response = get(LEVEL4_PATH)
+      unless response.body =~ /hint : (\d+)/
+        failed
+        return
+      end
+      log("Server timestamp: #{$1}")
+      time = Time.now.to_i + 1
+      log("Timestamp: #{time}")
+      query = URI.encode_www_form(
+        'password' => Digest::MD5.hexdigest(time.to_s)
+      )
+      log('Sending MD5 hashed password')
+      response = get("#{LEVEL4_PATH}?#{query}")
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 5')
+      query = URI.encode_www_form('imget' => 1)
+      log('Sending query')
+      response = post(
+        "#{LEVEL5_PATH}?#{query}",
+        { 'impost' => 1 },
+        { 'Cookie' => 'imcookie=1' }
+      )
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 6')
+      user_agent = 'Agent'
+      log('Determining your own IP address')
+      ip = myip
+      log("IP: #{ip}")
+      ip = Digest::MD5.hexdigest(ip)
+      kk = Digest::MD5.hexdigest(user_agent)
+      log('Sending query')
+      response = post(
+        LEVEL6_PATH,
+        { 'kk' => kk },
+        {
+          'User-Agent' => user_agent,
+          'Cookie' => "test=#{ip}"
+        }
+      )
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 7')
+      log('Determining your own IP address')
+      ip = myip
+      log("IP: #{ip}")
+      ip.delete!('.')
+      query = URI.encode_www_form(ip => ip)
+      log('Sending query')
+      response = get("#{LEVEL7_PATH}?#{query}")
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 8')
+      query = URI.encode_www_form('addr' => '127.0.0.1')
+      log('Sending query')
+      response = get("#{LEVEL8_PATH}?#{query}")
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 9')
+      answer = String.new
+      97.step(122, 2) { |i| answer << i.chr }
+      query = URI.encode_www_form('ans' => answer)
+      log('Sending query')
+      response = get("#{LEVEL9_PATH}?#{query}")
+      unless response.body =~ /Next/
+        failed
+        return
+      end
+
+      log('Level 10')
+      log('Determining your own IP address')
+      ip = myip
+      log("IP: #{ip}")
+      i = 0
+      while i <= ip.length
+        ip.gsub!(i.to_s, i.to_s.ord.to_s)
+        i += 1
+      end
+      ip.delete!('.')
+      ip = ip[0..9]
+      answer = ip.to_f / 2
+      answer = answer.to_s.delete('.')
+      log("Answer: #{answer}")
+      log('Getting page')
+      get(LEVEL10_PATH)
+      log('Getting answer page')
+      response = get("#{LEVEL10_DIR}#{answer}_#{ip}.php")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 35
   class Challenge35 < ChallengeBase
     CHALLENGE = 35
