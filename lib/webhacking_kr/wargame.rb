@@ -57,6 +57,21 @@ module WebhackingKR
       !@session_id.nil?
     end
 
+    def auth(flag)
+      request = Net::HTTP::Post.new(
+        QUERY_AUTH,
+        { 'Cookie' => "PHPSESSID=#{@session_id}" }
+      )
+      request.set_form_data('flag' => flag)
+      begin
+        response = @client.request(request)
+      rescue StandardError => e
+        raise HTTPError, e
+      else
+        response.body
+      end
+    end
+
     def status
       begin
         response = @client.get(
